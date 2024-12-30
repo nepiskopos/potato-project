@@ -1,0 +1,7 @@
+CREATE USER IF NOT EXISTS 'user'@'localhost' IDENTIFIED BY 'password';
+
+CREATE DATABASE IF NOT EXISTS db;
+
+GRANT ALL PRIVILEGES ON db.* TO 'user'@'localhost';
+
+FLUSH PRIVILEGES;

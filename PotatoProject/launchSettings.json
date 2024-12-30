@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "Docker Compose": {
+        "commandName": "DockerCompose",
+        "commandVersion": "1.0",
+        "composeLaunchAction": "LaunchBrowser",
+        "composeLaunchServiceName": "potatoproject",
+        "composeLaunchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+        "serviceActions": {
+            "potatoproject": "StartDebugging",
+            "app_db": "StartWithoutDebugging",
+            "log_db": "StartWithoutDebugging"
+        },
+        "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Production"
+            //"ASPNETCORE_ENVIRONMENT": "Development"
+        }
+    }
+  }
+}

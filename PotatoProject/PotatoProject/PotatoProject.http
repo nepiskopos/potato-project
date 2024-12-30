@@ -1,0 +1,6 @@
+@PotatoProject_HostAddress = http://localhost:5232
+
+GET {{PotatoProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

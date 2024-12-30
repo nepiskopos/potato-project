@@ -1,0 +1,102 @@
+services:
+  potatoproject:
+    image: ${DOCKER_REGISTRY-}potatoproject
+    build:
+      context: .
+      dockerfile: PotatoProject/Dockerfile
+    container_name: app
+    cap_add:
+      # Suppress unnecessary messages
+      - SYS_NICE
+    depends_on:
+      app_db:
+        condition: service_healthy
+      log_db:
+        condition: service_healthy
+    ports:
+      # <Host port exposed> : <Service Port running inside container>
+      - '80:8080'
+      - '81:8081'
+    expose:
+      # Opens ports 8080 and 8081 on the container
+      - '8080'
+      - '8081'
+    env_file:
+      - path: .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://+:8081
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTP_PORTS=8081
+      # - ConnectionStrings__ApplicationDatabase=server=app_db;port=3306;database=db;uid=user;pwd=password;
+      # - ConnectionStrings__SerilogDatabase=server=log_db;port=3307;database=db;uid=user;pwd=password;
+    # networks:
+      # - frontend
+  app_db:
+    image: mysql:lts
+    container_name: app_db
+    cap_add:
+      # Suppress unnecessary messages
+      - SYS_NICE
+    restart: always
+    command: ["mysqld", "--mysql-native-password=ON"]
+    env_file:
+      - path: ./db/app_db/conf/credentials.env
+    ports:
+      # <Host port exposed> : <MySQL Port running inside container>
+      - '3306:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+    volumes:
+      # Where our data will be persisted
+      - ./db/app_db/conf/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/app_db/db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$MYSQL_ROOT_PASSWORD' ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 20s
+    # networks:
+      # - frontend
+  log_db:
+    image: mysql:lts
+    container_name: log_db
+    cap_add:
+      # Suppress unnecessary messages
+      - SYS_NICE
+    restart: always
+    command: ["mysqld", "--mysql-native-password=ON"]
+    env_file:
+      - path: ./db/log_db/conf/credentials.env
+    ports:
+      # <Host port exposed> : <MySQL Port running inside container>
+      - '3307:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+    volumes:
+      # Where our data will be persisted
+      - ./db/log_db/conf/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/log_db/db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$MYSQL_ROOT_PASSWORD' ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 20s
+    # networks:
+      # - frontend
+# Names our volume
+volumes:
+  app_db:
+    driver: local
+  log_db:
+    driver: local
+# networks:
+  # frontend:
+    # # Specify driver options
+    # driver: bridge
