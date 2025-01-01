@@ -1,16 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Sec;
 
 namespace PotatoProject.DBContexts
 {
     public class PotatoDbContext : DbContext
     {
         public DbSet<Models.Potato> Potatos { get; set; }
-
-        public PotatoDbContext() : base()
-        { }
-
-        public PotatoDbContext(DbContextOptions<PotatoDbContext> options) : base(options)
-        { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -19,7 +14,17 @@ namespace PotatoProject.DBContexts
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            optionsBuilder.UseMySQL(configuration.GetConnectionString("ApplicationDatabase"));
+            var connectionString = configuration.GetConnectionString("ApplicationDatabase");
+
+            if (new[] { "{0}", "{1}", "{2}" }.All(c => connectionString.Contains(c)))
+            {
+                var db_name = Environment.GetEnvironmentVariable("APP_DB_MYSQL_DATABASE");
+                var db_user = Environment.GetEnvironmentVariable("APP_DB_MYSQL_USER");
+                var db_password = Environment.GetEnvironmentVariable("APP_DB_MYSQL_PASSWORD");
+                connectionString = string.Format(connectionString, db_name, db_user, db_password);
+            }
+
+            optionsBuilder.UseMySQL(connectionString);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -47,8 +52,9 @@ namespace PotatoProject.DBContexts
             {
                 return await this.Potatos.FindAsync(id);
             }
-            catch (MySql.Data.MySqlClient.MySqlException)
+            catch (MySql.Data.MySqlClient.MySqlException e)
             {
+                Serilog.Log.Error(e.ToString());
                 return null;
             }
         }
@@ -75,8 +81,9 @@ namespace PotatoProject.DBContexts
                     return null;
                 }
             }
-            catch (MySql.Data.MySqlClient.MySqlException)
+            catch (MySql.Data.MySqlClient.MySqlException e)
             {
+                Serilog.Log.Error(e.ToString());
                 return null;
             }
         }

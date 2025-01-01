@@ -22,35 +22,23 @@ namespace PotatoProject
             // Add AutoMapper
             builder.Services.AddAutoMapper(typeof(PotatoAutoMapper));
             // Add service database support
-            builder.Services.AddDbContext<DBContexts.PotatoDbContext>(
-                options =>
-                {
-                    if (!builder.Environment.IsDevelopment())
-                    {
-                        var db_name = Environment.GetEnvironmentVariable("APP_DB_MYSQL_DATABASE");
-                        var db_user = Environment.GetEnvironmentVariable("APP_DB_MYSQL_USER");
-                        var db_password = Environment.GetEnvironmentVariable("APP_DB_MYSQL_PASSWORD");
-                        var connectionString = string.Format(builder.Configuration.GetConnectionString("ApplicationDatabase"), db_name, db_user, db_password);
-                        options.UseMySQL(connectionString);
-                    }
-            });
+            builder.Services.AddDbContext<DBContexts.PotatoDbContext>();
             // Add logging support with Serilog
             builder.Services.AddLogging();
             builder.Host.UseSerilog((context, services, configuration) =>
             {
-                configuration.ReadFrom.Configuration(context.Configuration);
-                if (!builder.Environment.IsDevelopment())
+                var connectionString = builder.Configuration.GetConnectionString("SerilogDatabase");
+
+                if (new[] { "{0}", "{1}", "{2}" }.All(c => connectionString.Contains(c)))
                 {
                     var db_name = Environment.GetEnvironmentVariable("LOG_DB_MYSQL_DATABASE");
                     var db_user = Environment.GetEnvironmentVariable("LOG_DB_MYSQL_USER");
                     var db_password = Environment.GetEnvironmentVariable("LOG_DB_MYSQL_PASSWORD");
-                    var connectionString = string.Format(builder.Configuration.GetConnectionString("ApplicationDatabase"), db_name, db_user, db_password);
-                    configuration.WriteTo.MySQL(connectionString);
+                    connectionString = string.Format(connectionString, db_name, db_user, db_password);
                 }
-                else
-                {
-                    configuration.WriteTo.MySQL(context.Configuration.GetConnectionString("SerilogDatabase"));
-                }
+                System.Diagnostics.Debug.WriteLine(connectionString);
+                configuration.ReadFrom.Configuration(context.Configuration);
+                configuration.WriteTo.MySQL(connectionString);
             });
             builder.WebHost.ConfigureKestrel(o =>
             {
